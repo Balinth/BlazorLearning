@@ -42,6 +42,5 @@ else
     protected override async Task OnInitializedAsync()
     {
         forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
-            await Task.Run(() => System.Threading.Thread.Sleep(10000));
     }
 }

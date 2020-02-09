@@ -1,0 +1,26 @@
+﻿@page "/todo"
+
+@using BlazorLearning.Data;
+
+    <h1>Todo @todoItems.Count(i => i.IsDone)</h1>
+    <input placeholder="Something Todo" @bind="newTodo" />
+    <button @onclick="AddTodo">Add Todo</button>
+    <ul>
+        @foreach (var item in todoItems)
+        {
+            <li>
+                <input @bind="item.Title"/>
+                <input type="checkbox" name="IsDone" @bind="item.IsDone" />
+            </li>
+        }
+    </ul>
+
+@code{
+    private IList<TodoItem> todoItems = new List<TodoItem>();
+    private string newTodo;
+    private void AddTodo()
+    {
+        todoItems.Add(new TodoItem() { Title = newTodo, IsDone = false }) ;
+        newTodo = "";
+    }
+}
