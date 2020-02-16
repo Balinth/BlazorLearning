@@ -1,3 +1,93 @@
 ﻿@page "/"
+@inject HttpClient HttpClient
 
 <h1>Blazing Pizzas</h1>
+
+<div class="main">
+    <ul class="pizza-cards">
+        @if (showConfigDialog)
+        {
+            <ConfigPizzaDialog Pizza="configuringPizza" OnCancel="@CancelConfigPizzaDialog" OnConfirm="@ConfirmConfiguredPizza"/>
+        }
+        @if (pizzaSpecials != null)
+        {
+            @foreach (var item in pizzaSpecials)
+            {
+                <li @onclick="@(() => ShowConfigDialog(item))" style="background-image:url('@item.ImageUrl')">
+                    <div class="pizza-info">
+                        <span class="title">@item.Name</span>
+                        @item.Description
+                        <span class="price">@item.GetFormattedBasePrice()</span>
+                    </div>
+                </li>
+            }
+        }
+    </ul>
+</div>
+<div class="sidebar">
+    @if (order.Pizzas.Any())
+    {
+		 <div class="order-contents">
+             <h2>Your order:</h2>
+             @foreach (var configuredPizza in order.Pizzas)
+             {
+                 <ConfiguredPizzaItem OnRemoved="(() => RemoveConfiguredPizza(configuredPizza))" Pizza="configuredPizza"/>
+             }
+         </div>
+    }
+    else
+    {
+        <div class="empty-cart">Choose a pizza<br>to get started</div>
+    }
+    <div class="order-total @(order.Pizzas.Any() ? "" : "hidden")">
+        Total:
+        <span class="total-price">@order.GetFormattedTotalPrice()</span>
+        <button class="btn-warning" disabled="@(order.Pizzas.Count==0)" @onclick="@PlaceOrder">
+            Order2 >
+        </button>
+    </div>
+</div>
+@code {
+    private List<PizzaSpecial> pizzaSpecials = new List<PizzaSpecial>();
+
+    private Pizza configuringPizza;
+    private bool showConfigDialog;
+    private Order order = new Order();
+
+    private void ShowConfigDialog(PizzaSpecial pizzaSpecial)
+    {
+        configuringPizza = new Pizza()
+        {
+            Special = pizzaSpecial,
+            SpecialId = pizzaSpecial.Id,
+            Size = Pizza.DefaultSize,
+            Toppings = new List<PizzaTopping>(),
+        };
+        showConfigDialog = true;
+    }
+    private void CancelConfigPizzaDialog()
+    {
+        configuringPizza = null;
+        showConfigDialog = false;
+    }
+    private void ConfirmConfiguredPizza()
+    {
+        order.Pizzas.Add(configuringPizza);
+        configuringPizza = null;
+        showConfigDialog = false;
+    }
+    private void RemoveConfiguredPizza(Pizza pizza)
+    {
+        order.Pizzas.Remove(pizza);
+    }
+    private async Task PlaceOrder()
+    {
+        order = new Order();
+        await HttpClient.PostJsonAsync("orders", order);
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        pizzaSpecials = await HttpClient.GetJsonAsync<List<PizzaSpecial>>("specials");
+    }
+}
